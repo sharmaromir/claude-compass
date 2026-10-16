@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo · Launch planning - Claude</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f8f7f3; color: #332f2b; font: 16px/1.6 system-ui, sans-serif; }
+    nav { position: fixed; inset: 0 auto 0 0; width: 260px; padding: 30px 20px; background: #eeece6; border-right: 1px solid #dedbd3; }
+    nav strong { display: block; margin: 0 12px 36px; font: 30px Georgia, serif; }
+    nav small { display: block; margin: 10px 12px; color: #767169; text-transform: uppercase; font-size: 11px; letter-spacing: .1em; }
+    nav a { display: block; color: inherit; margin: 6px 0; padding: 10px 12px; border-radius: 8px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    nav a[aria-current="page"] { background: #dfdcd4; }
+    main { max-width: 830px; margin: 0 auto; padding: 75px 36px 60px; transform: translateX(100px); }
+    h1 { margin: 0 0 12px; font: 34px/1.2 Georgia, serif; }
+    .demo-notice { display: inline-block; color: #786446; font-size: 12px; margin-bottom: 38px; }
+    .user-message { background: #e8e4da; padding: 16px 20px; border-radius: 20px; margin: 0 0 30px 90px; }
+    .assistant-message { margin-bottom: 26px; padding: 0 12px; }
+    .assistant-message p { margin: 0 0 18px; }
+    .composer { margin-top: 40px; padding: 20px; border: 1px solid #ccc8bd; border-radius: 20px; min-height: 124px; background: #fffefa; }
+    .composer [contenteditable] { outline: none; min-height: 48px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .editor-wrap { position: relative; overflow: hidden; }
+    .editor-placeholder { position: absolute; top: 0; left: 0; color: #8a8479; pointer-events: none; }
+    .editor-wrap:has([contenteditable]:not(:empty)) .editor-placeholder { display: none; }
+    .composer footer { display: flex; justify-content: space-between; color: #8a8479; font-size: 12px; margin-top: 10px; }
+    .agent-card { padding: 14px 18px; border-radius: 12px; border: 1px solid #d7d1c5; background: #fffefa; margin: 18px 0; }
+    .agent-card h3 { font-size: 15px; margin: 0; }
+    .agent-card p { font-size: 13px; margin: 8px 0 0; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1f201e; color: #e7e5de; }
+      nav { background: #292a27; border-color: #3e403a; }
+      nav a[aria-current="page"] { background: #3b3d36; }
+      .demo-notice, .composer footer, .editor-placeholder { color: #bbb4a3; }
+      .user-message { background: #3a3b34; }
+      .composer, .agent-card { background: #292b26; border-color: #53574b; }
+    }
+    @media (max-width: 760px) {
+      nav { position: static; width: auto; padding: 16px; }
+      nav strong { margin: 0 0 12px; }
+      nav small { margin: 0; }
+      nav a { margin: 2px 0; padding: 4px 8px; }
+      main { width: 100%; margin: 0; transform: none; padding: 24px 18px 245px; }
+      h1 { font-size: 28px; overflow-wrap: anywhere; }
+      .user-message { margin-left: 0; }
+      .composer { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="Chat history">
+    <strong>Claude <span style="font-size:12px;color:#887e6d">Demo</span></strong>
+    <small>Demo conversations</small>
+    <a href="/chat/demo-launch" aria-current="page">Demo · Launch planning</a>
+    <a href="/chat/demo-research">Demo · Research notes</a>
+    <a href="/chat/demo-writing">Demo · Writing studio</a>
+  </nav>
+  <main>
+    <h1>Demo · Launch planning</h1>
+    <span class="demo-notice">Local test fixture · Sample data only · Not a live Claude session</span>
+    <div class="user-message" data-testid="user-message">Demo: help me plan a focused afternoon for this project.</div>
+    <section class="assistant-message" data-testid="assistant-message">
+      <p>Start by choosing one concrete result you would like to finish. Keep the next step small enough to begin now.</p>
+      <p id="ordinary-prose">Demo prose: a running agent completed its task and returned a result. These ordinary words must never create a mailbox entry.</p>
+      <div id="agent-container"></div>
+    </section>
+    <form class="composer" data-testid="chat-input-container">
+      <div class="editor-wrap">
+        <div contenteditable="true" role="textbox" aria-label="Reply to Claude" data-testid="chat-input"></div>
+        <div class="editor-placeholder" aria-hidden="true">Reply to Claude · Demo composer</div>
+      </div>
+      <footer><span>Demo composer</span><span>↵</span></footer>
+    </form>
+  </main>
+  <script>
+    const titles = {
+      'demo-launch': 'Demo · Launch planning',
+      'demo-research': 'Demo · Research notes',
+      'demo-writing': 'Demo · Writing studio'
+    };
+    function renderChat() {
+      const id = location.pathname.split('/').pop();
+      const title = titles[id] || 'Demo · New conversation';
+      document.title = title + ' - Claude';
+      document.querySelector('h1').textContent = title;
+      document.querySelector('#agent-container').replaceChildren();
+      document.querySelectorAll('nav a').forEach(link => {
+        if (link.pathname === location.pathname) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+      });
+    }
+    document.querySelectorAll('nav a').forEach(link => link.addEventListener('click', event => {
+      event.preventDefault();
+      history.pushState({}, '', link.href);
+      renderChat();
+    }));
+    window.addEventListener('popstate', renderChat);
+    document.querySelector('form').addEventListener('submit', event => event.preventDefault());
+    window.demoNavigate = id => {
+      history.pushState({}, '', '/chat/' + id);
+      renderChat();
+    };
+    window.demoAgent = (status = 'running', result = '') => {
+      let card = document.querySelector('[data-agent-id="demo-research-agent"]');
+      if (!card) {
+        card = document.createElement('section');
+        card.className = 'agent-card';
+        card.dataset.agentId = 'demo-research-agent';
+        card.dataset.agentName = 'Demo · Source research';
+        card.dataset.testid = 'agent-card';
+        document.querySelector('#agent-container').append(card);
+      }
+      card.dataset.agentStatus = status;
+      card.dataset.status = status;
+      card.dataset.agentResult = result;
+      card.dataset.result = result;
+      card.replaceChildren();
+      const heading = document.createElement('h3');
+      heading.textContent = 'Demo · Source research';
+      card.append(heading);
+      const state = document.createElement('p');
+      state.dataset.testid = 'agent-status';
+      state.textContent = status;
+      card.append(state);
+      if (result) {
+        const output = document.createElement('p');
+        output.dataset.testid = 'agent-result';
+        output.dataset.agentResult = result;
+        output.textContent = result;
+        card.append(output);
+      }
+    };
+    renderChat();
+  </script>
+</body>
+</html>

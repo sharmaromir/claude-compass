@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Claude Compass",
+  "version": "0.2.0",
+  "description": "A color identity for every Claude chat, local focus and idle reports, and a session agent mailbox.",
+  "minimum_chrome_version": "114",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Claude Compass"
+  },
+  "options_page": "dashboard.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "common.js",
+        "adapter.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none';"
+  }
+}

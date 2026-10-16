@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Compass</title>
+  <script src="dashboard.js"></script><link rel="stylesheet" href="dashboard.css">
+  <script src="common.js" defer></script>
+
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="dashboard.html"><span class="brand-mark" aria-hidden="true">✳</span><span>compass <span class="brand-subtitle">FOR CLAUDE</span></span></a>
+      <div class="workspace-label">YOUR WORKSPACE</div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-page="overview" aria-current="page"><span class="nav-icon" aria-hidden="true">◫</span> Overview</button>
+        <button class="nav-item" data-page="mailbox"><span class="nav-icon" aria-hidden="true">▤</span> Agent mailbox <span id="nav-unread" class="nav-count" hidden>0</span></button>
+        <button class="nav-item" data-page="settings"><span class="nav-icon" aria-hidden="true">⚙</span> Settings</button>
+      </nav>
+      <div class="sidebar-note"><span class="tiny-label">CONVERSATION CONTEXT</span><p>Chat colors, activity totals,<br>and agent results in one place.</p></div>
+      <div class="local-indicator"><span></span> Stored on this device</div>
+    </aside>
+
+    <main class="main">
+      <div id="demo-banner" class="demo-banner" hidden>PREVIEW MODE · Sample data only. Changes stay in this preview.</div>
+      <div id="connection-error" class="error-banner" role="alert" hidden></div>
+      <header class="topbar"><span id="today-label"></span><button id="pause-button" class="button subtle small"><span class="status-dot"></span><span id="pause-label">Tracking on</span></button></header>
+
+      <section id="page-overview" class="page">
+        <div class="page-heading"><div><div class="eyebrow">ACTIVITY</div><h1>Your workspace.</h1><p class="lead">Conversation colors, time spent, and recent updates.</p></div><button id="copy-day" class="button">Copy today’s summary <span aria-hidden="true">↗</span></button></div>
+        <div class="metrics-grid">
+          <article class="metric-card"><div class="metric-label"><span>Active today</span><span class="metric-symbol teal" aria-hidden="true">↗</span></div><div id="active-today" class="metric-value">0m</div><p>Time interacting with a chat</p></article>
+          <article class="metric-card"><div class="metric-label"><span>Idle today</span><span class="metric-symbol amber" aria-hidden="true">◷</span></div><div id="idle-today" class="metric-value">0m</div><p>Quiet time in a visible chat</p></article>
+          <article class="metric-card lavender"><div class="metric-label"><span>Conversations</span><span class="metric-symbol purple" aria-hidden="true">◫</span></div><div id="chat-count" class="metric-value">0</div><p><span id="running-count">0</span> <span id="running-noun">agents</span> currently marked running</p></article>
+        </div>
+        <div class="section-heading"><div><h2>Your conversations <span id="chat-count-chip" class="count-chip">0</span></h2><p>Choose a color to recognize each chat.</p></div><label class="search-wrap"><span aria-hidden="true">⌕</span><input id="chat-search" type="search" placeholder="Find a conversation" aria-label="Search conversations"></label></div>
+        <div id="chat-list" class="chat-list"></div>
+        <div id="empty-chats" class="empty-state"><div class="empty-icon" aria-hidden="true">◫</div><h3>No conversations yet.</h3><p>Open a chat on claude.ai to start. Compass assigns a color and records active and idle time while the chat is visible.</p><a class="button primary" href="https://claude.ai/new" target="_blank" rel="noopener noreferrer">Open Claude <span aria-hidden="true">↗</span></a></div>
+        <div class="section-heading report-heading"><div><h2>Saved updates</h2><p>Copy an activity snapshot into your next progress update.</p></div><span class="tiny-label">ON THIS DEVICE</span></div>
+        <div id="reports-list" class="reports-list"></div>
+        <div id="empty-reports" class="inline-empty">No saved updates yet. Choose “Save update” on a conversation to create one.</div>
+        <p class="footnote">Active and idle time are attention estimates, not measures of productivity. Tracking runs only in the selected, visible Claude tab.</p>
+      </section>
+
+      <section id="page-mailbox" class="page" hidden>
+        <div class="page-heading"><div><div class="eyebrow">AGENTS</div><h1>Agent mailbox.</h1><p class="lead">Track agent status and results by conversation.</p></div><button id="add-agent" class="button primary">+ Add an agent</button></div>
+        <div class="notice"><span class="notice-icon" aria-hidden="true">i</span><div><strong>What Compass can observe</strong><p>Automatic detection can only see agent cards exposed by the Claude page. Private server-side subagents are not accessible. Statuses reflect the last observation, and may be out of date. Add manual entries to track other work.</p></div></div>
+        <div class="mailbox-toolbar"><label class="field compact">Conversation<select id="mailbox-chat"><option value="">All conversations</option></select></label><label class="field compact">Status<select id="mailbox-status"><option value="all">All statuses</option><option value="running">Running</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="unknown">Unknown</option><option value="unread">Unread</option><option value="read">Read</option></select></label><span id="mailbox-count" class="muted"></span></div>
+        <div id="agents-list" class="agents-list"></div>
+        <div id="empty-agents" class="empty-state"><div class="empty-icon" aria-hidden="true">▤</div><h3>No matching agents.</h3><p>Agent cards detected in an open Claude conversation appear here. You can also add an agent and its result manually.</p><button id="empty-add-agent" class="button">Add your first agent</button></div>
+      </section>
+
+      <section id="page-settings" class="page" hidden>
+        <div class="page-heading"><div><div class="eyebrow">PREFERENCES</div><h1>Settings.</h1><p class="lead">Choose your appearance, activity tracking, and saved updates.</p></div></div>
+        <form id="settings-form" class="settings-card">
+          <h2>Appearance & activity</h2>
+          <label class="setting-row"><span><strong>Appearance</strong><small>Follow your system preference or choose a theme.</small></span><select id="theme-setting" name="theme" aria-label="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+          <label class="setting-row"><span><strong>Idle threshold</strong><small>Mark a visible chat idle after this many seconds without interaction.</small></span><span class="input-with-unit"><input id="idle-seconds" name="idleSeconds" type="number" min="15" max="900" required><span>seconds</span></span></label>
+          <label class="setting-row"><span><strong>Automatic updates</strong><small>Save a periodic activity summary. Set to 0 to disable.</small></span><span class="input-with-unit"><input id="update-minutes" name="updateMinutes" type="number" min="0" max="240" required><span>minutes</span></span></label>
+          <label class="setting-row"><span><strong>Pause tracking</strong><small>Stop adding active and idle time until you resume.</small></span><input id="paused-setting" name="paused" type="checkbox" class="switch" aria-label="Pause tracking"></label>
+          <div class="settings-actions"><span class="muted">Your preferences apply to all Claude chats.</span><button class="button primary" type="submit">Save preferences</button></div>
+        </form>
+        <div class="settings-card"><h2>Your data, on your device</h2><p class="muted">Compass stores conversation titles, colors, time totals, agent card text, and saved updates in Chrome’s local extension storage. Nothing is sent to a separate server. Export a backup at any time.</p><div class="data-actions"><button id="export-data" class="button">Export data as JSON <span aria-hidden="true">↓</span></button><button id="reset-data" class="button danger">Reset all Compass data</button></div></div>
+        <div class="settings-card slim"><h2>How the clock works</h2><p class="muted">The selected Claude tab must be visible in a focused browser window. Interactions reset the idle timer. Switching conversations gives each chat its own totals. Leaving the browser stops the clock; it does not add idle time.</p></div>
+      </section>
+    </main>
+  </div>
+  <dialog id="agent-dialog" class="agent-dialog" aria-labelledby="agent-dialog-title"><form id="agent-form"><div class="dialog-heading"><div><div class="eyebrow">MANUAL ENTRY</div><h2 id="agent-dialog-title">Add an agent</h2></div><button id="close-agent" class="icon-button" type="button" aria-label="Close">×</button></div><input id="agent-id" type="hidden"><label class="field">Agent name<input id="agent-name" type="text" maxlength="160" placeholder="e.g. Research assistant" required></label><div class="form-grid"><label class="field">Conversation<select id="agent-chat" required></select></label><label class="field">Status<select id="agent-status"><option value="running">Running</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="unknown">Unknown</option></select></label></div><label class="field">Result or progress note<textarea id="agent-result" rows="6" maxlength="12000" placeholder="Add the result, a useful link, or a quick progress note."></textarea></label><p class="muted dialog-help">This is a manual record. Update it when the agent’s work changes.</p><div class="dialog-actions"><button id="cancel-agent" type="button" class="button subtle">Cancel</button><button type="submit" class="button primary">Save agent</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
