@@ -59,7 +59,7 @@ npm run package
 
 The browser tests launch isolated Chromium with the extension, intercept web requests with clearly labeled demo pages, and leave your normal Chrome profile unchanged. They verify color persistence, navigation, timing, conservative agent detection, reports, dashboard, and popup. They do not claim live Claude compatibility. Test screenshots are written beside the extension folder by default; set `COMPASS_PREVIEW_DIR` to change the destination for all screenshots (or `COMPASS_PREVIEW_PATH` for the primary dashboard image).
 
-Version 0.2.0 passes 29 core tests, 21 end-to-end browser scenarios, and 18 automated accessibility scans. The updated dark dashboard, popup, chat panel, saved appearance preference, and timer resume were also checked in signed-in Chrome.
+Version 0.2.0 passes 29 core tests, 21 end-to-end browser scenarios, and 24 automated accessibility scans. The updated dark dashboard, popup, chat panel, saved appearance preference, and timer resume were also checked in signed-in Chrome.
 
 The installed extension was checked on a signed-in Claude session on October 16, 2026: sidebar colors, composer outline and destination label, switching between saved chats, separate activity totals, dashboard launch, and saving a local report all worked. The live check caught and fixed an overlap with Claude's absolutely positioned composer placeholder; the browser fixture now tests that layout too. Automatic agent discovery has only been tested with fixtures, because the live chats inspected did not expose agent cards.
 

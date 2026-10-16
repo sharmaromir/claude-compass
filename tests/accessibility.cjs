@@ -18,7 +18,7 @@ let context;
 async function audit(page, label, include) {
   await page.bringToFront();
   let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
-  if (include) builder = builder.include(include);
+  if (include) for (const selector of [].concat(include)) builder = builder.include(selector);
   const result = await builder.analyze();
   checks++;
   if (result.violations.length) {
@@ -48,6 +48,7 @@ async function run() {
   const demo = await context.newPage();
 
   for (const theme of ['light', 'dark']) {
+    await chat.emulateMedia({ colorScheme: theme });
     await demo.emulateMedia({ colorScheme: theme });
     await demo.goto(`chrome-extension://${id}/dashboard.html?demo=1`);
     await demo.waitForFunction(expected => document.documentElement.dataset.theme === expected, theme);
@@ -69,7 +70,14 @@ async function run() {
     await popup.waitForFunction(theme => document.documentElement.dataset.theme === theme, theme);
     await audit(popup, `${theme}-popup`);
     await chat.waitForFunction(theme => document.querySelector('#compass-root')?.dataset.theme === theme, theme);
-    await audit(chat, `${theme}-chat-panel`, '#compass-root');
+    const chatCues = ['#compass-root', '#compass-composer-label'];
+    await audit(chat, `${theme}-chat-panel`, chatCues);
+    for (const color of ['#24718e', '#000000', '#ffffff']) {
+      const saved = await popup.evaluate(color => chrome.runtime.sendMessage({ type: 'SET_COLOR', chatId: 'chat:demo-accessibility', color }), color);
+      assert.equal(saved.ok, true, saved.error);
+      await chat.waitForFunction(color => document.documentElement.style.getPropertyValue('--compass-color') === color, color);
+      await audit(chat, `${theme}-custom-color-${color.slice(1)}`, chatCues);
+    }
   }
   assert.equal(failures.length, 0, `${failures.length}/${checks} accessibility scans failed. See details above.`);
   console.log(`Accessibility: ${checks}/${checks} scans passed (WCAG A/AA, light + dark, desktop + mobile).`);

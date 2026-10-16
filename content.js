@@ -88,6 +88,7 @@
     const preference = state.settings.theme || 'system';
     host.dataset.themePreference = preference;
     host.dataset.theme = preference === 'system' ? systemTheme.matches ? 'dark' : 'light' : preference;
+    label.dataset.theme = host.dataset.theme;
   }
 
   function refreshTimer(now = Date.now()) {

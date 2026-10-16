@@ -22,7 +22,7 @@
     .composer [contenteditable] { outline: none; min-height: 48px; white-space: pre-wrap; overflow-wrap: anywhere; }
     .editor-wrap { position: relative; overflow: hidden; }
     .editor-placeholder { position: absolute; top: 0; left: 0; color: #8a8479; pointer-events: none; }
-    .editor-wrap:has([contenteditable]:not(:empty)) .editor-placeholder { display: none; }
+    .editor-wrap[data-empty="false"] .editor-placeholder { display: none; }
     .composer footer { display: flex; justify-content: space-between; color: #8a8479; font-size: 12px; margin-top: 10px; }
     .agent-card { padding: 14px 18px; border-radius: 12px; border: 1px solid #d7d1c5; background: #fffefa; margin: 18px 0; }
     .agent-card h3 { font-size: 15px; margin: 0; }
@@ -65,7 +65,7 @@
       <div id="agent-container"></div>
     </section>
     <form class="composer" data-testid="chat-input-container">
-      <div class="editor-wrap">
+      <div class="editor-wrap" data-empty="true">
         <div contenteditable="true" role="textbox" aria-label="Reply to Claude" data-testid="chat-input"></div>
         <div class="editor-placeholder" aria-hidden="true">Reply to Claude · Demo composer</div>
       </div>
@@ -96,6 +96,9 @@
     }));
     window.addEventListener('popstate', renderChat);
     document.querySelector('form').addEventListener('submit', event => event.preventDefault());
+    document.querySelector('[contenteditable]').addEventListener('input', event => {
+      event.target.closest('.editor-wrap').dataset.empty = String(!event.target.textContent.trim());
+    });
     window.demoNavigate = id => {
       history.pushState({}, '', '/chat/' + id);
       renderChat();
