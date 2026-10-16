@@ -19,11 +19,14 @@
     .assistant-message { margin-bottom: 26px; padding: 0 12px; }
     .assistant-message p { margin: 0 0 18px; }
     .composer { margin-top: 40px; padding: 20px; border: 1px solid #ccc8bd; border-radius: 20px; min-height: 124px; background: #fffefa; }
+    .composer.rounded-composer { border-radius: 14px; }
     .composer [contenteditable] { outline: none; min-height: 48px; white-space: pre-wrap; overflow-wrap: anywhere; }
     .editor-wrap { position: relative; overflow: hidden; }
     .editor-placeholder { position: absolute; top: 0; left: 0; color: #8a8479; pointer-events: none; }
     .editor-wrap[data-empty="false"] .editor-placeholder { display: none; }
-    .composer footer { display: flex; justify-content: space-between; color: #8a8479; font-size: 12px; margin-top: 10px; }
+    .composer footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #8a8479; font-size: 12px; margin-top: 10px; }
+    .composer footer button, .demo-outside-toolbar button { padding: 6px 8px; border: 1px solid #ccc8bd; border-radius: 7px; background: transparent; color: inherit; font: 11px system-ui, sans-serif; cursor: pointer; }
+    .demo-outside-toolbar { margin-top: 12px; color: #8a8479; font-size: 12px; }
     .agent-card { padding: 14px 18px; border-radius: 12px; border: 1px solid #d7d1c5; background: #fffefa; margin: 18px 0; }
     .agent-card h3 { font-size: 15px; margin: 0; }
     .agent-card p { font-size: 13px; margin: 8px 0 0; }
@@ -69,7 +72,7 @@
         <div contenteditable="true" role="textbox" aria-label="Reply to Claude" data-testid="chat-input"></div>
         <div class="editor-placeholder" aria-hidden="true">Reply to Claude · Demo composer</div>
       </div>
-      <footer><span>Demo composer</span><span>↵</span></footer>
+      <footer><button type="button" data-demo-attach>Attach demo</button><span>Demo composer</span><button type="button" data-demo-send>Send demo</button></footer>
     </form>
   </main>
   <script>
@@ -96,6 +99,12 @@
     }));
     window.addEventListener('popstate', renderChat);
     document.querySelector('form').addEventListener('submit', event => event.preventDefault());
+    window.demoSendClicks = 0;
+    window.demoAttachClicks = 0;
+    document.querySelector('form').addEventListener('click', event => {
+      if (event.target.closest('[data-demo-send]')) window.demoSendClicks += 1;
+      if (event.target.closest('[data-demo-attach]')) window.demoAttachClicks += 1;
+    });
     document.querySelector('[contenteditable]').addEventListener('input', event => {
       event.target.closest('.editor-wrap').dataset.empty = String(!event.target.textContent.trim());
     });

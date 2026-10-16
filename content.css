@@ -1,6 +1,6 @@
 :root { --compass-color: #8671c9; }
 [data-compass-chat] { position: relative; border-inline-start: 3px solid var(--compass-link-color) !important; padding-inline-start: 10px !important; }
-[data-compass-composer] { outline: 2px solid color-mix(in srgb, var(--compass-color) 80%, transparent) !important; outline-offset: -2px; border-radius: 8px; }
+[data-compass-composer] { outline: 2px solid color-mix(in srgb, var(--compass-color) 80%, transparent) !important; outline-offset: -1px; }
 #compass-composer-label { display: block; width: fit-content; color: #334155; background: #f1f5f9; border: 1px solid color-mix(in srgb, var(--compass-color) 60%, #cbd0d7); border-inline-start: 3px solid var(--compass-color); border-radius: 6px; padding: 3px 7px; font: 600 10px/1.5 system-ui, sans-serif; letter-spacing: .01em; margin: 7px 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; pointer-events: none; }
 #compass-composer-label[data-theme="dark"] { color: #e5e7eb; background: #242932; border-color: color-mix(in srgb, var(--compass-color) 60%, #505966); border-inline-start-color: var(--compass-color); color-scheme: dark; }
 #compass-root { position: fixed !important; left: 16px !important; bottom: 16px !important; z-index: 2147483640 !important; }

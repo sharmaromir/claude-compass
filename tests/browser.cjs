@@ -131,23 +131,116 @@ async function run() {
 
   await test('Composer identity label follows the editor and clears its absolute placeholder', async () => {
     const layout = await page.evaluate(() => {
-      const editor = document.querySelector('[data-compass-composer]');
+      const editor = document.querySelector('[contenteditable="true"]');
+      const shell = document.querySelector('[data-compass-composer]');
       const label = document.querySelector('#compass-composer-label');
       const placeholder = document.querySelector('.editor-placeholder');
+      const controls = document.querySelector('.composer footer');
+      const shellRect = shell.getBoundingClientRect();
+      const editorRect = editor.getBoundingClientRect();
+      const controlsRect = controls.getBoundingClientRect();
       return {
         followsEditor: label.previousSibling === editor,
         labelTop: label.getBoundingClientRect().top,
         editorBottom: editor.getBoundingClientRect().bottom,
         placeholderBottom: placeholder.getBoundingClientRect().bottom,
         placeholderVisible: getComputedStyle(placeholder).display !== 'none',
-        outlineOffset: getComputedStyle(editor).outlineOffset
+        outlineOffset: getComputedStyle(shell).outlineOffset,
+        shellContainsEditor: shell !== editor && shell.contains(editor),
+        shellContainsControls: shell.contains(controls),
+        nativeRadius: getComputedStyle(shell).borderRadius,
+        editorOutline: getComputedStyle(editor).outlineStyle,
+        enclosesEditor: shellRect.top <= editorRect.top && shellRect.left <= editorRect.left && shellRect.right >= editorRect.right && shellRect.bottom >= editorRect.bottom,
+        enclosesControls: shellRect.top <= controlsRect.top && shellRect.left <= controlsRect.left && shellRect.right >= controlsRect.right && shellRect.bottom >= controlsRect.bottom,
+        markerCount: document.querySelectorAll('[data-compass-composer]').length
       };
     });
     assert.equal(layout.followsEditor, true, 'Identity label must follow the editable element');
     assert.equal(layout.placeholderVisible, true, 'Fixture must exercise an empty composer with a visible placeholder');
     assert.ok(layout.labelTop >= layout.editorBottom, 'Label must sit below the editor');
     assert.ok(layout.labelTop >= layout.placeholderBottom, 'Label must not overlap the absolute placeholder');
-    assert.ok(parseFloat(layout.outlineOffset) <= 0, 'Outline must remain inside the overflow-clipped wrapper');
+    assert.ok(parseFloat(layout.outlineOffset) <= 0, 'Outline should follow the outside shell border');
+    assert.equal(layout.markerCount, 1, 'Only one composer shell should be highlighted');
+    assert.ok(layout.shellContainsEditor && layout.shellContainsControls && layout.enclosesEditor && layout.enclosesControls, 'The color outline must enclose the input and its controls');
+    assert.equal(layout.nativeRadius, '20px', 'Preserve the fixture shell’s native radius');
+    assert.equal(layout.editorOutline, 'none', 'Do not leave a second outline on the editable area');
+  });
+
+  await test('Native nested composer shells retain their radius, survive replacement, and skip unknown wrappers', async () => {
+    const typed = 'Demo text remains untouched while the composer shell changes.';
+    await page.locator('[contenteditable]').fill(typed);
+    await page.evaluate(() => {
+      const form = document.querySelector('form');
+      form.removeAttribute('data-testid');
+      form.classList.remove('composer');
+      const shell = document.createElement('div');
+      shell.className = 'composer rounded-composer bg-surface-3 shadow-composer';
+      shell.dataset.demoShell = 'first';
+      while (form.firstChild) shell.append(form.firstChild);
+      form.append(shell);
+      const outside = document.createElement('div');
+      outside.className = 'demo-outside-toolbar';
+      outside.textContent = 'Demo model controls outside the composer';
+      form.append(outside);
+    });
+    await eventually(() => page.locator('[data-demo-shell="first"][data-compass-composer]').count(), 'native rounded composer shell receives the outline');
+    let geometry = await page.evaluate(() => {
+      const shell = document.querySelector('[data-compass-composer]');
+      const editor = document.querySelector('[contenteditable]');
+      const controls = document.querySelector('[data-demo-send]');
+      const outside = document.querySelector('.demo-outside-toolbar');
+      const box = shell.getBoundingClientRect();
+      const button = controls.getBoundingClientRect();
+      return { radius: getComputedStyle(shell).borderRadius, editorOutline: getComputedStyle(editor).outlineStyle, containsControls: shell.contains(controls), containsOutside: shell.contains(outside), controlsBottom: button.bottom, shellBottom: box.bottom, outsideTop: outside.getBoundingClientRect().top, markerCount: document.querySelectorAll('[data-compass-composer]').length };
+    });
+    assert.equal(geometry.radius, '14px', 'Keep the native rounded-composer radius');
+    assert.equal(geometry.editorOutline, 'none');
+    assert.equal(geometry.markerCount, 1);
+    assert.equal(geometry.containsControls, true);
+    assert.equal(geometry.containsOutside, false, 'Do not expand the outline onto the outside toolbar');
+    assert.ok(geometry.controlsBottom <= geometry.shellBottom && geometry.shellBottom <= geometry.outsideTop);
+    assert.equal(await page.locator('[contenteditable]').innerText(), typed);
+    await page.locator('[data-demo-send]').click();
+    await page.locator('[data-demo-attach]').click();
+    assert.deepEqual(await page.evaluate(() => [window.demoSendClicks, window.demoAttachClicks]), [1, 1], 'Shell decoration must not intercept native controls');
+    assert.equal(await page.locator('[contenteditable]').innerText(), typed);
+
+    await page.evaluate(() => {
+      const previous = document.querySelector('[data-demo-shell="first"]');
+      const replacement = document.createElement('div');
+      replacement.className = 'composer rounded-composer bg-surface-3 shadow-composer';
+      replacement.dataset.demoShell = 'replacement';
+      while (previous.firstChild) replacement.append(previous.firstChild);
+      previous.after(replacement);
+    });
+    await eventually(() => page.locator('[data-demo-shell="replacement"][data-compass-composer]').count(), 'replacement shell receives outline');
+    assert.equal(await page.locator('[data-demo-shell="first"]').getAttribute('data-compass-composer'), null, 'Old shell marker must be cleared');
+    assert.equal(await page.locator('[data-compass-composer]').count(), 1);
+    assert.equal(await page.locator('#compass-composer-label').count(), 1);
+
+    await page.evaluate(() => {
+      const shell = document.querySelector('[data-demo-shell="replacement"]');
+      shell.classList.remove('rounded-composer');
+      // A matching class on the editable itself must never create the old tiny box.
+      document.querySelector('[contenteditable]').classList.add('rounded-composer');
+      shell.append(document.createComment('Demo unknown shell rerender'));
+    });
+    await eventually(async () => (await page.locator('[data-compass-composer]').count()) === 0, 'unknown shell omits outline instead of highlighting only the input');
+    assert.equal(await page.locator('#compass-composer-label').count(), 1, 'Destination identity remains useful without a known shell');
+    assert.equal(await page.locator('[contenteditable]').innerText(), typed);
+
+    await page.evaluate(() => {
+      const form = document.querySelector('form');
+      const shell = document.querySelector('[data-demo-shell="replacement"]');
+      document.querySelector('[contenteditable]').classList.remove('rounded-composer');
+      const editorWrap = shell.querySelector('.editor-wrap');
+      const footer = shell.querySelector('footer');
+      form.replaceChildren(editorWrap, footer);
+      form.className = 'composer';
+      form.dataset.testid = 'chat-input-container';
+    });
+    await eventually(() => page.locator('form[data-compass-composer]').count(), 'original known fixture shell restored');
+    await page.locator('[contenteditable]').fill('');
   });
 
   await test('Custom chat color persists through SPA navigation and reload', async () => {
@@ -416,7 +509,10 @@ async function run() {
       document.querySelector('h1').textContent = title;
     }, longTitle);
     await page.bringToFront();
+    await page.locator('[contenteditable]').fill('');
+    const emptyShellHeight = await page.locator('[data-compass-composer]').evaluate(shell => shell.getBoundingClientRect().height);
     await page.locator('[contenteditable]').fill('Demo multiline composer.\nSecond line of editable text.\nThird line with a deliberately_long_unbroken_word_for_layout_testing.');
+    assert.ok(await page.locator('[data-compass-composer]').evaluate(shell => shell.getBoundingClientRect().height) > emptyShellHeight, 'Full shell outline should grow with multiline text');
     await eventually(async () => (await state()).chats['chat:demo-launch'].title.startsWith('Demo · A very long'), 'long chat title captured');
     for (const theme of ['light', 'dark']) {
       await api(dashboard, { type: 'UPDATE_SETTINGS', settings: { theme } });
@@ -426,12 +522,15 @@ async function run() {
         await page.setViewportSize({ width, height: 900 });
         await noHorizontalOverflow(page, `${theme} content at ${width}px`);
         const layout = await page.evaluate(() => {
-          const editor = document.querySelector('[data-compass-composer]').getBoundingClientRect();
+          const editor = document.querySelector('[contenteditable]').getBoundingClientRect();
+          const shell = document.querySelector('[data-compass-composer]').getBoundingClientRect();
+          const controls = document.querySelector('[data-demo-send]').getBoundingClientRect();
           const label = document.querySelector('#compass-composer-label').getBoundingClientRect();
           const host = document.querySelector('#compass-root').getBoundingClientRect();
-          return { editorBottom: editor.bottom, labelTop: label.top, labelRight: label.right, hostRight: host.right, width: innerWidth };
+          return { editorBottom: editor.bottom, labelTop: label.top, labelRight: label.right, hostRight: host.right, width: innerWidth, shellTop: shell.top, shellLeft: shell.left, shellRight: shell.right, shellBottom: shell.bottom, controlsRight: controls.right, controlsBottom: controls.bottom, editorTop: editor.top, editorLeft: editor.left, editorRight: editor.right };
         });
         assert.ok(layout.labelTop >= layout.editorBottom && layout.labelRight <= layout.width, 'Composer label must fit below multiline input');
+        assert.ok(layout.shellTop <= layout.editorTop && layout.shellLeft <= layout.editorLeft && layout.shellRight >= layout.editorRight && layout.shellBottom >= layout.editorBottom && layout.shellRight >= layout.controlsRight && layout.shellBottom >= layout.controlsBottom, 'Full composer outline must enclose multiline editor and controls');
         assert.ok(layout.hostRight <= layout.width, 'Floating identity card must remain onscreen');
         await dashboard.setViewportSize({ width, height: 900 });
         for (const view of ['overview', 'mailbox', 'settings']) {

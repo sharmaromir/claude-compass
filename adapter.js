@@ -26,6 +26,13 @@
     return Array.from(candidates).find(el => visible(el) && !el.closest('#compass-root, [role="dialog"], nav, aside')) || null;
   }
 
+  function composerShell(editor) {
+    const shell = editor?.closest('.rounded-composer, [data-testid="chat-input-container"]');
+    // The editable node may be only one line high. Outline only a recognized
+    // native container so the cue surrounds the complete composer and controls.
+    return shell && shell !== editor && visible(shell) ? shell : null;
+  }
+
   function agents(doc = document) {
     // Require structural agent metadata. Broad text matching would mistake assistant prose for telemetry.
     const candidates = doc.querySelectorAll('[data-subagent-id], [data-agent-id], [data-testid="subagent-card"], [data-testid="agent-card"], [data-testid="tool-call"][data-tool-name="Agent"], [data-testid="tool-call"][data-tool-name="Task"]');
@@ -45,5 +52,5 @@
     }
     return Array.from(found.values()).slice(0, 100);
   }
-  root.CompassAdapter = {currentChat, composer, agents, normalizeStatus};
+  root.CompassAdapter = {currentChat, composer, composerShell, agents, normalizeStatus};
 })(globalThis);

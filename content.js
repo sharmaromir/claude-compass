@@ -160,9 +160,10 @@
       if (link.style.getPropertyValue('--compass-link-color') !== color) link.style.setProperty('--compass-link-color', color);
     }
     const editor = A.composer();
-    for (const old of document.querySelectorAll('[data-compass-composer]')) if (old !== editor) old.removeAttribute('data-compass-composer');
+    const shell = A.composerShell(editor);
+    for (const old of document.querySelectorAll('[data-compass-composer]')) if (old !== shell) old.removeAttribute('data-compass-composer');
+    if (shell && !shell.hasAttribute('data-compass-composer')) shell.setAttribute('data-compass-composer', '');
     if (editor) {
-      if (!editor.hasAttribute('data-compass-composer')) editor.setAttribute('data-compass-composer', '');
       // Claude positions the placeholder at the top of this wrapper. A label
       // before the editor would collide with it; keep the cue below the editor.
       if (label.previousSibling !== editor) editor.after(label);
